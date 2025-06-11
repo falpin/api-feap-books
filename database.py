@@ -54,13 +54,13 @@ def create_tables():
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         login TEXT NOT NULL,
-        role TEXT CHECK(role IN ('user', 'admin', 'developer')) DEFAULT 'user',
         password TEXT,
-        books JSON DEFAULT {},
+        books JSON,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         last_login DATETIME,
         telegram_id TEXT,
-        is_approved BOOLEAN DEFAULT 1
+        is_approved BOOLEAN DEFAULT 1,
+        role TEXT CHECK(role IN ('user', 'admin', 'developer')) DEFAULT 'user'
     )''')
 
     # книги
@@ -68,13 +68,21 @@ def create_tables():
     CREATE TABLE IF NOT EXISTS books (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        author TEXT CHECK(role IN ('user', 'admin', 'developer')) DEFAULT 'user',
+        author TEXT,
         description TEXT,
         image TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        user_create INTEGER REFERENCES users(id)
+        user_create INTEGER REFERENCES users(id),
         is_approved BOOLEAN DEFAULT 1
     )''')
 
+def insert_user(login, password):
+    SQL_request(
+            """INSERT INTO users (
+                login, password, last_login
+            ) VALUES (?, ?, datetime('now'))""",
+            params=(login, password),
+            fetch='none'
+        )
 
 create_tables()
