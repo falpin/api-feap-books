@@ -76,12 +76,12 @@ def create_tables():
         is_approved BOOLEAN DEFAULT 1
     )''')
 
-def insert_user(login, password):
+def insert_user(login, password=None, telegram_id=None):
     SQL_request(
             """INSERT INTO users (
-                login, password, last_login
-            ) VALUES (?, ?, datetime('now'))""",
-            params=(login, password),
+                login, password, last_login, telegram_id
+            ) VALUES (?, ?, datetime('now'), ?)""",
+            params=(login, password, telegram_id),
             fetch='none'
         )
 
