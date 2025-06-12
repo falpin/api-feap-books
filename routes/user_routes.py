@@ -1,72 +1,43 @@
 from .main_routes import *
 
-@api.route('/registration', methods=['POST'])
-def registration():
-    data = request.get_json()
-    
-    required_fields = ['login', 'password']
-    for field in required_fields:
-        if not data.get(field):
-            return jsonify({"error": f"Поле '{field}' обязательно"}), 400
-
-    login = data['login']
-    password = data['password']
-
-    # Проверяем, существует ли пользователь
-    existing_user = SQL_request("SELECT id FROM users WHERE login = ?", params=(login,), fetch='one')
-    if existing_user:
-        return jsonify({"error": "Этот логин занят"}), 400
-
-    password = generate_password_hash(password)
-
-    try:
-        insert_user(login, password)
-        user = SQL_request("SELECT * FROM users WHERE login = ?;", (login,), fetch='one')
-
-        token = jwt.encode({
-            'user_id': user["id"],
-            'login': login,
-            'role': "user",
-            'exp': datetime.utcnow() + timedelta(days=365)
-        }, SECRET_KEY, algorithm="HS256")
-
-        del user['password']
-        return jsonify({"token": token, "user": user}), 200
-
-    except Exception as e:
-        logging.error(f"Ошибка регистрации: {e}")
-        return jsonify({"error": "Ошибка регистрации"}), 500
-    return jsonify({"message": "Успешная регистрация"}), 200
-
 
 @api.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
 
     required_fields = ['login', 'password']
-    for field in required_fields:
-        if not data.get(field):
-            return jsonify({"error": f"Поле '{field}' обязательно"}), 400
-
+    if error := validate_required_fields(data, required_fields):
+        return error
+    
     login = data['login']
     password = data['password']
-    user = SQL_request("SELECT * FROM users WHERE login = ?;", (login,), fetch='one')
+    
+    user = authenticate_user(login, password=password)
+    if isinstance(user, tuple):
+        return user
 
-    if not user:
-        return jsonify({"error": "Неверный логин или пароль"}), 401
+    return jsonify(generate_auth_response(user))
 
-    if not check_password_hash(user['password'], password):
-        return jsonify({"error": "Неверный логин или пароль"}), 401
+@api.route('/login/telegram', methods=['POST'])
+def login_telegram():
+    data = request.get_json()
+    
+    # Проверка обязательных полей
+    required_fields = ['login', 'telegram_id']
+    if error := validate_required_fields(data, required_fields):
+        return error
+    
+    login = data['login']
+    telegram_id = data['telegram_id']
+    
+    user = authenticate_user(login, telegram_id=telegram_id)
+    if isinstance(user, tuple):
+        return user
+    
+    SQL_request("UPDATE users SET login = ? WHERE telegram_id = ?", (login, telegram_id))
 
-    token = jwt.encode({
-            'user_id': user["id"],
-            'login': login,
-            'role': "user",
-            'exp': datetime.utcnow() + timedelta(days=365)
-        }, SECRET_KEY, algorithm="HS256")
+    return jsonify(generate_auth_response(user))
 
-    del user['password']
-    return jsonify({"token": token, "user": user}), 200
 
 @api.route('/profile', methods=['GET'])
 def profile():

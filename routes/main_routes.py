@@ -1,11 +1,8 @@
 from database import SQL_request, insert_user
 from flask import Blueprint, jsonify, request, abort, g, send_file
 from functools import wraps
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from werkzeug.security import check_password_hash, generate_password_hash
 import jwt
 import logging
-from mail import send_email
 from middleware import setup_middleware, auth_decorator
 import config
 from utils import *
