@@ -25,10 +25,7 @@ if not audit_logger.handlers:
 def auth_decorator(role='student', check_self=True):
     """
     Универсальный декоратор для аутентификации и авторизации.
-    
-    Параметры:
-        role (str): Требуемая роль ('admin', 'developer' и т.д.)
-        check_self (bool): Проверяет, что пользователь работает только со своими данными
+
     """
     def decorator(func):
         @wraps(func)
@@ -109,8 +106,33 @@ def auth_decorator(role='student', check_self=True):
 def setup_middleware(app):
     @app.before_request
     def api_key_and_logging_middleware():
+        excluded_routes = ['/registration', '/login']
+        if request.path in excluded_routes or request.method == 'OPTIONS':
+            return None
 
+        if request.url_rule and request.url_rule.rule.startswith('/images/'):
+            return None
+
+        # Проверка на наличие JWT токена
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            auth_decorator()
+
+        api_key = request.headers.get('X-API-Key')
+        base = api_key.split(",")
+        api_key = base[0]
+        if not api_key:
+            return jsonify({"error": "API ключ отсутствует"}), 401
+
+        if api_key not in app.config.get('ALLOWED_API_KEYS', []):
+            return jsonify({"error": "Неверный API ключ"}), 403
+
+        # Сохраняем время начала запроса
         request._start_time = datetime.now()
+        if len(base) > 1:
+            telegram_id = base[1].replace("telegram_id=","")
+            user = SQL_request("SELECT * FROM users WHERE telegram_id = ?", params=(telegram_id,), fetch='one')
+            g.user = user
         return None
 
     @app.after_request
