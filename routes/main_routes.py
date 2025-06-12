@@ -11,6 +11,8 @@ from datetime import datetime
 
 
 SECRET_KEY = config.SECRET_KEY
+UPLOAD_FOLDER = config.UPLOAD_FOLDER
+ALLOWED_EXTENSIONS = config.ALLOWED_EXTENSIONS
 
 api = Blueprint('api', __name__)
 

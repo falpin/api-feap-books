@@ -71,6 +71,7 @@ def create_tables():
         author TEXT,
         description TEXT,
         image TEXT,
+        file_path TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         user_create INTEGER REFERENCES users(id),
         is_approved BOOLEAN DEFAULT 1

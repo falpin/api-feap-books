@@ -9,4 +9,5 @@ required_env_vars = ["SECRET_KEY", "DB_PATH"]
 
 UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER")
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_BOOK_EXTENSIONS = {'txt'}
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024

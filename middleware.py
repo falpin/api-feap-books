@@ -22,7 +22,7 @@ if not audit_logger.handlers:
     audit_logger.addHandler(audit_handler)
 
 
-def auth_decorator(role='student', check_self=True):
+def auth_decorator(role='user', check_self=True):
     """
     Универсальный декоратор для аутентификации и авторизации.
 
@@ -59,7 +59,7 @@ def auth_decorator(role='student', check_self=True):
 
                     # Логирование
                     audit_logger.info(
-                        f"{payload['email']} ({user_role}) вызвал маршрут {request.path} | IP: {request.remote_addr}"
+                        f"{payload['login']} ({user_role}) вызвал маршрут {request.path} | IP: {request.remote_addr}"
                     )
 
                 # Получение данных пользователя
@@ -117,10 +117,13 @@ def setup_middleware(app):
         auth_header = request.headers.get('Authorization')
         if auth_header and auth_header.startswith('Bearer '):
             auth_decorator()
+            return None
+
 
         api_key = request.headers.get('X-API-Key')
-        base = api_key.split(",")
-        api_key = base[0]
+        if api_key:
+            base = api_key.split(",")
+            api_key = base[0]
         if not api_key:
             return jsonify({"error": "API ключ отсутствует"}), 401
 
